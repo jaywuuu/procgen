@@ -23,7 +23,7 @@ class NoiseFunctionRNG : public RandomIf {
         return *reinterpret_cast<T*>(&ret);
     }
 
-    template <> unsigned NoiseFunctionRNG::getRand<unsigned>() {
+    template <> unsigned getRand<unsigned>() {
         return m_nf.noise1D(m_pos++);
     }
     

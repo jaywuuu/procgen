@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-int main(int argc, void* argv[]) {
+int main(int argc, char* argv[]) {
     std::cout << "Testing the Grid.\n";
 
     const unsigned x = 80;

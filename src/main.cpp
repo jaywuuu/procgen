@@ -10,7 +10,7 @@ using namespace std::chrono;
 
 void printASCIIDungeon(Dungeon2DMap &d, ASCIIDungeonTileset &tileSet);
 
-void run_dungeon_gen_with_params() {
+static void run_dungeon_gen_with_rooms() {
     const unsigned width = 80;
     const unsigned height = 40;
 
@@ -39,10 +39,7 @@ void run_dungeon_gen_with_params() {
     printASCIIDungeon(dungeon, tileSet);
 }
 
-int main(int argc, void *argv[]) {
-    const unsigned width = 80;
-    const unsigned height = 40;
-
+static void run_dungeon_gen_default(unsigned int width, unsigned int height) {
     ASCIIDungeonTileset tileSet;
 
     system_clock::time_point now = system_clock::now();
@@ -55,6 +52,86 @@ int main(int argc, void *argv[]) {
     dGen.generate(nf, dungeon, tileSet);
 
     printASCIIDungeon(dungeon, tileSet);
+}
+
+enum class RunMode : int {
+    Default = 0,
+    Rooms,
+    Count
+};
+
+struct RunParams {
+    unsigned int width = 0;
+    unsigned int height = 0;
+    RunMode mode = RunMode::Default;
+    bool parse_status = false;
+};
+
+static RunParams parse_command_line(int argc, char *argv[]) {
+    RunParams p;
+    
+    if (argc <= 1) {
+        p.parse_status = true;
+        return p;
+    }
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "-w") {
+            if (i == argc-1)
+                return p;
+            
+            std::string v = argv[i+1];
+            p.width = std::stoul(v);
+        } else if (arg == "-h") {
+            if (i == argc-1)
+                return p;
+
+            std::string v = argv[i+1];
+            p.height = std::stoul(v);
+        } else if (arg == "-m") {
+            if (i == argc-1)
+                return p;
+
+            std::string v = argv[i+1];
+            if (v == "rooms") 
+                p.mode = RunMode::Rooms;
+        }
+    }
+
+    p.parse_status = true;
+    return p;
+}
+
+int main(int argc, char *argv[]) {
+    const unsigned width = 80;
+    const unsigned height = 40;
+
+    RunParams p = parse_command_line(argc, argv);
+    if (!p.parse_status) {
+        std::cout << "Error: invalid command line parameters.\n";
+        return -1;
+    }
+
+    if (p.width <= 0 || p.height <= 0) {
+        p.width = width;
+        p.height = height;
+    }
+
+    switch (p.mode) {
+        case RunMode::Default: {
+            run_dungeon_gen_default(p.width, p.height);
+            break;
+        }
+        case RunMode::Rooms: {
+            run_dungeon_gen_with_rooms();
+            break;
+        }
+        default: {
+            std::cout << "Error: invalid run mode.\n";
+            return -1;
+        }
+    }
 
     return 0;
 }
