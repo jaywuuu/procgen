@@ -86,12 +86,14 @@ bool DungeonGenerator::isRoomValidInDungeon(Room &room,
         room.y2 >= dungeon.getSizeY())
         return false;
 
+#if 0
     for (unsigned y = room.y1; y <= room.y2; ++y) {
         for (unsigned x = room.x1; x <= room.x2; ++x) {
             if (dungeon[y][x] != DungeonTileset::TileTypes::Empty)
                 return false;
         }
     }
+#endif
 
     return true;
 }

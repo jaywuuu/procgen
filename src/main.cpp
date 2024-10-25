@@ -1,7 +1,7 @@
 #include "dungeongen.h"
+#include "noisefunc.h"
 #include "tileset.h"
 #include "types.h"
-#include "noisefunc.h"
 
 #include <chrono>
 #include <iostream>
@@ -54,11 +54,37 @@ static void run_dungeon_gen_default(unsigned int width, unsigned int height) {
     printASCIIDungeon(dungeon, tileSet);
 }
 
-enum class RunMode : int {
-    Default = 0,
-    Rooms,
-    Count
-};
+static void run_dungeon_gen_both(unsigned int width, unsigned int height) {
+    ASCIIDungeonTileset tileSet;
+
+    system_clock::time_point now = system_clock::now();
+    unsigned seed = static_cast<unsigned>(system_clock::to_time_t(now));
+
+    DungeonGenerator dGen(seed);
+    Dungeon2DMap dungeon(width, height);
+
+    NoiseFunction nf(seed);
+    dGen.generate(nf, dungeon, tileSet);
+
+    DungeonGenerator::Params params = {};
+    params.room.roomWidth = 5;
+    params.room.roomMaxWidth = 10;
+    params.room.roomHeight = 3;
+    params.room.roomMaxHeight = 8;
+    params.room.numRooms = 4;
+    params.room.numMaxRooms = 8;
+    params.room.maxRetries = 10;
+    params.room.randomRoomSize = true;
+    params.room.randomNumRooms = true;
+    params.room.discardInvalidRoom = true;
+    params.room.skipRoomIfInvalid = false;
+
+    dGen.generate(params, dungeon, tileSet);
+
+    printASCIIDungeon(dungeon, tileSet);
+}
+
+enum class RunMode : int { Default = 0, Rooms, Both, Count };
 
 struct RunParams {
     unsigned int width = 0;
@@ -69,7 +95,7 @@ struct RunParams {
 
 static RunParams parse_command_line(int argc, char *argv[]) {
     RunParams p;
-    
+
     if (argc <= 1) {
         p.parse_status = true;
         return p;
@@ -78,24 +104,26 @@ static RunParams parse_command_line(int argc, char *argv[]) {
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
         if (arg == "-w") {
-            if (i == argc-1)
+            if (i == argc - 1)
                 return p;
-            
-            std::string v = argv[i+1];
+
+            std::string v = argv[i + 1];
             p.width = std::stoul(v);
         } else if (arg == "-h") {
-            if (i == argc-1)
+            if (i == argc - 1)
                 return p;
 
-            std::string v = argv[i+1];
+            std::string v = argv[i + 1];
             p.height = std::stoul(v);
         } else if (arg == "-m") {
-            if (i == argc-1)
+            if (i == argc - 1)
                 return p;
 
-            std::string v = argv[i+1];
-            if (v == "rooms") 
+            std::string v = argv[i + 1];
+            if (v == "rooms")
                 p.mode = RunMode::Rooms;
+            else if (v == "both")
+                p.mode = RunMode::Both;
         }
     }
 
@@ -119,18 +147,22 @@ int main(int argc, char *argv[]) {
     }
 
     switch (p.mode) {
-        case RunMode::Default: {
-            run_dungeon_gen_default(p.width, p.height);
-            break;
-        }
-        case RunMode::Rooms: {
-            run_dungeon_gen_with_rooms();
-            break;
-        }
-        default: {
-            std::cout << "Error: invalid run mode.\n";
-            return -1;
-        }
+    case RunMode::Default: {
+        run_dungeon_gen_default(p.width, p.height);
+        break;
+    }
+    case RunMode::Rooms: {
+        run_dungeon_gen_with_rooms();
+        break;
+    }
+    case RunMode::Both: {
+        run_dungeon_gen_both(p.width, p.height);
+        break;
+    }
+    default: {
+        std::cout << "Error: invalid run mode.\n";
+        return -1;
+    }
     }
 
     return 0;
